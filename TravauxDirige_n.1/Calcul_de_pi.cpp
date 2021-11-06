@@ -9,7 +9,7 @@
 # include <mpi.h>
 
 // Attention , ne marche qu'en C++ 11 ou supérieur :
-double approximate_pi( unsigned long nbSamples ) 
+unsigned long approximate_pi( unsigned long nbSamples ) 
 {
     typedef std::chrono::high_resolution_clock myclock;
     myclock::time_point beginning = myclock::now();
@@ -26,8 +26,8 @@ double approximate_pi( unsigned long nbSamples )
         if ( x*x+y*y<=1 ) nbDarts ++;
     }
     // Number of nbDarts throwed in the unit disk
-    double ratio = double(nbDarts)/double(nbSamples);
-    return 4*ratio;
+    // double ratio = double(nbDarts)/double(nbSamples);
+    return nbDarts;
 }
 
 int main( int nargs, char* argv[] )
@@ -59,7 +59,30 @@ int main( int nargs, char* argv[] )
 	fileName << "Output" << std::setfill('0') << std::setw(5) << rank << ".txt";
 	std::ofstream output( fileName.str().c_str() );
 
-	// Rajout de code....
+	unsigned long nb_points = 0;
+	MPI_Status status;
+	int tag = 1212;
+	unsigned long tmp;
+	unsigned long nbSamples = 1000000;
+
+	if(rank == 0)
+	{
+		for(int i=0; i<nbp-1; i++)
+		{
+			MPI_Recv(&tmp, 1, MPI_UNSIGNED_LONG, 
+                 i+1, tag, globComm, &status);
+			nb_points += tmp;
+			
+		}
+		double ratio = (double)nb_points/nbSamples;
+		output << "Valeur approchée de pi : " << 4*ratio << std::endl;
+	}
+	else 
+	{
+		nb_points = approximate_pi(nbSamples/(nbp-1));
+		MPI_Send(&nb_points, 1, MPI_UNSIGNED_LONG, 0,tag, globComm );
+	}
+	
 
 	output.close();
 	// A la fin du programme, on doit synchroniser une dernière fois tous les processus
