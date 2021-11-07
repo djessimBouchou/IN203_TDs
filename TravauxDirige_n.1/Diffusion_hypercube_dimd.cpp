@@ -1,9 +1,11 @@
 # include <cstdlib>
 # include <sstream>
 # include <string>
+# include <stdlib.h>
 # include <fstream>
 # include <iostream>
 # include <iomanip>
+# include <math.h>
 # include <mpi.h>
 
 int main( int nargs, char* argv[] )
@@ -35,8 +37,40 @@ int main( int nargs, char* argv[] )
 	fileName << "Output" << std::setfill('0') << std::setw(5) << rank << ".txt";
 	std::ofstream output( fileName.str().c_str() );
 
-	// Rajout du programme ici...
+	unsigned long tmp;
+	int tag = 1212;
+	MPI_Status status;
+
+	if(nargs != 2)
+	{
+		std::cout << "Error. Wrong number of arguments." << std::endl;
+		return(-1);
+	}
+	unsigned long val_prog = atoi(argv[1]);
+
+	int d = 4 ; // Dimension de l'hypercube
+
+	for(int i=1; i<pow(2, d-1); i=i*2)
+	{
+		if(rank==0)
+		{
+			tmp = val_prog;
+			MPI_Send(&tmp, 1, MPI_UNSIGNED_LONG, i, tag, globComm);
+			
+		}
+		else if(rank>0 && rank<i)
+		{
+			MPI_Send(&tmp, 1, MPI_UNSIGNED_LONG, i+rank, tag, globComm);
+			
+		}
+		else if(2*i > rank && rank >= i)
+		{
+			MPI_Recv(&tmp, 1, MPI_UNSIGNED_LONG, rank-i,tag, globComm, &status);
+		}
+	}
 	
+	
+	output << "Valeur transmise : " << tmp << std::endl;
 	output.close();
 	// A la fin du programme, on doit synchroniser une dernière fois tous les processus
 	// afin qu'aucun processus ne se termine pendant que d'autres processus continue à
