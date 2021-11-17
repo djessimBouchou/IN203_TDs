@@ -1,5 +1,3 @@
-# include <chrono>
-# include <random>
 # include <cstdlib>
 # include <sstream>
 # include <string>
@@ -7,28 +5,6 @@
 # include <iostream>
 # include <iomanip>
 # include <mpi.h>
-
-// Attention , ne marche qu'en C++ 11 ou supérieur :
-unsigned long approximate_pi( unsigned long nbSamples ) 
-{
-    typedef std::chrono::high_resolution_clock myclock;
-    myclock::time_point beginning = myclock::now();
-    myclock::duration d = beginning.time_since_epoch();
-    unsigned seed = d.count();
-    std::default_random_engine generator(seed);
-    std::uniform_real_distribution <double> distribution ( -1.0 ,1.0);
-    unsigned long nbDarts = 0;
-    // Throw nbSamples darts in the unit square [-1 :1] x [-1 :1]
-    for ( unsigned sample = 0 ; sample < nbSamples ; ++ sample ) {
-        double x = distribution(generator);
-        double y = distribution(generator);
-        // Test if the dart is in the unit disk
-        if ( x*x+y*y<=1 ) nbDarts ++;
-    }
-    // Number of nbDarts throwed in the unit disk
-    // double ratio = double(nbDarts)/double(nbSamples);
-    return nbDarts;
-}
 
 int main( int nargs, char* argv[] )
 {
@@ -59,30 +35,7 @@ int main( int nargs, char* argv[] )
 	fileName << "Output" << std::setfill('0') << std::setw(5) << rank << ".txt";
 	std::ofstream output( fileName.str().c_str() );
 
-	unsigned long nb_points = 0;
-	MPI_Status status;
-	int tag = 1212;
-	unsigned long tmp;
-	unsigned long nbSamples = 1000000;
-
-	if(rank == 0)
-	{
-		for(int i=0; i<nbp-1; i++)
-		{
-			MPI_Recv(&tmp, 1, MPI_UNSIGNED_LONG, 
-                 i+1, tag, globComm, &status);
-			nb_points += tmp;
-			
-		}
-		double ratio = (double)nb_points/nbSamples;
-		output << "Valeur approchée de pi : " << 4*ratio << std::endl;
-	}
-	else 
-	{
-		nb_points = approximate_pi(nbSamples/(nbp-1));
-		MPI_Send(&nb_points, 1, MPI_UNSIGNED_LONG, 0,tag, globComm );
-	}
-	
+	output << "Bonjour, je suis la tâche n° " << rank << " sur " << nbp << " tâches." << std::endl;
 
 	output.close();
 	// A la fin du programme, on doit synchroniser une dernière fois tous les processus

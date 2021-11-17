@@ -28,6 +28,7 @@ double approximate_pi(unsigned long nbSamples)
 
 int main()
 {
+    
     double pi = approximate_pi(100000);
     std::cout << "La valeur approchée vaut : " << 4*pi << std::endl;
 }
