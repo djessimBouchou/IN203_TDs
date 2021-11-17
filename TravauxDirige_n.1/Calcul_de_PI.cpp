@@ -1,10 +1,36 @@
-# include <cstdlib>
+#include<chrono>
+#include<random>
 # include <sstream>
 # include <string>
 # include <fstream>
 # include <iostream>
+# include <cstdlib>
 # include <iomanip>
 # include <mpi.h>
+
+//Attention,ne marche qu'en C++11 ou supérieur : 
+double approximate_pi(unsigned long nbSamples, int rank) 
+{
+    typedef std::chrono::high_resolution_clock myclock;
+    myclock::time_point beginning=myclock::now();
+    myclock::duration d = myclock::now() -beginning;
+    unsigned seed= d.count() + rank;
+    std::default_random_engine generator(seed);
+    std::uniform_real_distribution<double> distribution(-1.0,1.0);
+    unsigned long nbDarts= 0;
+    
+    //Throw nbSamples darts in the unit square [-1:1]x[-1:1]
+    
+    for(unsigned sample= 0;sample<nbSamples; ++sample) 
+    {
+        double x=distribution(generator);
+        double y=distribution(generator);
+        //Test if the dart is in the unit disk
+        if(x*x+y*y<=1 ) nbDarts++;
+    }
+    double ratio = (double) nbDarts / nbSamples ;
+    return 4*ratio;
+}
 
 int main( int nargs, char* argv[] )
 {
@@ -30,14 +56,26 @@ int main( int nargs, char* argv[] )
 	// l'utilisateur )
 	int rank;
 	MPI_Comm_rank(globComm, &rank);
-	// Création d'un fichier pour ma propre sortie en écriture :
-	std::stringstream fileName;
-	fileName << "Output" << std::setfill('0') << std::setw(5) << rank << ".txt";
-	std::ofstream output( fileName.str().c_str() );
+	
+    MPI_Status status;
+    int tag = 1425;
+    double ratio;
 
-	output << "Bonjour, je suis la tâche n° " << rank << " sur " << nbp << " tâches." << std::endl;
-
-	output.close();
+    unsigned long nbSamples = atoi(argv[1]);
+    if(rank== 0)
+    {
+        double approx = 0;
+        for(int i=1; i<nbp; i++)
+        {
+            MPI_Recv(&ratio, 1, MPI_DOUBLE, i, tag, globComm, &status);
+            approx += ratio;
+        }
+        std::cout << "L'approcimation de PI est : " << (double) approx/(nbp-1) << std::endl;
+    }else
+    {
+        ratio = approximate_pi(nbSamples,rank);
+        MPI_Send(&ratio, 1, MPI_DOUBLE, 0, tag, globComm);
+    }
 	// A la fin du programme, on doit synchroniser une dernière fois tous les processus
 	// afin qu'aucun processus ne se termine pendant que d'autres processus continue à
 	// tourner. Si on oublie cet instruction, on aura une plantage assuré des processus
