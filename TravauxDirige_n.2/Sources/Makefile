@@ -1,5 +1,5 @@
-#include Make.inc
-include Make_msys2.inc
+include Make_linux.inc
+#include Make_msys2.inc
 #include Make_osx.inc
 
 CXXFLAGS = -std=c++11 -fPIC
@@ -9,7 +9,7 @@ else
 CXXFLAGS += -O3 -march=native -Wall
 endif
 
-ALL=matvec.exe Mandelbrot.exe 
+ALL=matvec.exe Mandelbrot_Parallele.exe 
 
 default:	help
 
@@ -26,7 +26,7 @@ help:
 	@echo "Available targets : "
 	@echo "    all            : compile all executables"
 	@echo "    matvec.exe     : compile matrix vector product executable"
-	@echo "    Mandelbrot.exe : compile Mandelbrot set computation executable"
+	@echo "    Mandelbrot_Parallele.exe : compile Mandelbrot set computation executable"
 	@echo "Add DEBUG=yes to compile in debug"
 	@echo "Configuration :"
 	@echo "    CXX      :    $(CXX)"
