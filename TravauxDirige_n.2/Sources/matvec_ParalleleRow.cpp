@@ -2,6 +2,7 @@
 # include <cassert>
 # include <vector>
 # include <iostream>
+# include <mpi.h>
 
 // ---------------------------------------------------------------------
 class Matrix : public std::vector<double>
@@ -9,6 +10,7 @@ class Matrix : public std::vector<double>
 public:
     Matrix (int dim);
     Matrix( int nrows, int ncols );
+    Matrix( int nrows, int ncols, int rank);
     Matrix( const Matrix& A ) = delete;
     Matrix( Matrix&& A ) = default;
     ~Matrix() = default;
@@ -96,15 +98,68 @@ Matrix::Matrix( int nrows, int ncols ) : m_nrows(nrows), m_ncols(ncols),
     }    
 }
 // =====================================================================
-int main( int nargs, char* argv[] )
+Matrix::Matrix( int nrows, int ncols, int rank ) : m_nrows(nrows), m_ncols(ncols),
+                                         m_arr_coefs(nrows*ncols)
 {
-    const int N = 8;
-    Matrix A(N);
-    //std::cout  << "A : " << A << std::endl;
+    int dim = (nrows > ncols ? nrows : ncols );
+    for ( int i = 0; i < nrows; ++ i ) {
+        for ( int j = 0; j < ncols; ++j ) {
+            (*this)(i,j) = (i+j+rank*nrows)%dim;
+        }
+    }    
+}
+// =====================================================================
+int main(int nargs, char *argv[] ) 
+ { 
+     
+     // On initialise le contexte MPI qui va s'occuper :
+	//    1. Créer un communicateur global, COMM_WORLD qui permet de gérer
+	//       et assurer la cohésion de l'ensemble des processus créés par MPI;
+	//    2. d'attribuer à chaque processus un identifiant ( entier ) unique pour
+	//       le communicateur COMM_WORLD
+	//    3. etc...
+
+	MPI_Init( &nargs, &argv );
+	// Pour des raison préfère toujours cloner le communicateur global
+	// MPI_COMM_WORLD qui gère l'ensemble des processus lancés par MPI.
+	MPI_Comm globComm;
+	MPI_Comm_dup(MPI_COMM_WORLD, &globComm);
+	// On interroge le communicateur global pour connaître le nombre de processus
+	// qui ont été lancés par l'utilisateur :
+	int nbp;
+	MPI_Comm_size(globComm, &nbp);
+	// On interroge le communicateur global pour connaître l'identifiant qui
+	// m'a été attribué ( en tant que processus ). Cet identifiant est compris
+	// entre 0 et nbp-1 ( nbp étant le nombre de processus qui ont été lancés par
+	// l'utilisateur )
+	int rank;
+	MPI_Comm_rank(globComm, &rank);
+
+	// A la fin du programme, on doit synchroniser une dernière fois tous les processus
+	// afin qu'aucun processus ne se termine pendant que d'autres processus continue à
+	// tourner. Si on oublie cet instruction, on aura une plantage assuré des processus
+	// qui ne seront pas encore terminés.
+
+    const int N = 8; 
+    const int N_loc = N/nbp;
+    Matrix A(N_loc,N,rank); 
+    //std::cout  <<"A  pour le rang " << rank << " : " << A << std::endl;
     std::vector<double> u( N );
     for ( int i = 0; i < N; ++i ) u[i] = i+1;
     //std::cout << " u : " << u << std::endl;
-    std::vector<double> v = A*u;
-    std::cout << "A.u = " << v << std::endl;
+
+    std::vector<double> v(N); 
+    std::vector<double> v_part = A*u;
+    //std::cout << "v_part : pour le rang " << rank  << " : "<< v_part << std::endl;
+    
+    MPI_Gather(v_part.data(), N_loc, MPI_DOUBLE, v.data(),N_loc, MPI_DOUBLE, 0, globComm);
+    
+    if(rank ==0)
+    {
+        std::cout << " v : " << v << std::endl;
+    }
+    
+    
+    MPI_Finalize();
     return EXIT_SUCCESS;
 }

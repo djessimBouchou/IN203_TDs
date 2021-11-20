@@ -9,7 +9,7 @@ else
 CXXFLAGS += -O3 -march=native -Wall
 endif
 
-ALL=matvec.exe Mandelbrot_Parallele.exe 
+ALL=matvec_ParalleleRow.exe Mandelbrot_Parallele.exe matvec_ParalleleCol.exe
 
 default:	help
 
@@ -25,7 +25,7 @@ clean:
 help:
 	@echo "Available targets : "
 	@echo "    all            : compile all executables"
-	@echo "    matvec.exe     : compile matrix vector product executable"
+	@echo "    matvec_ParalleleRow.exe     : compile matrix vector product executable"
 	@echo "    Mandelbrot_Parallele.exe : compile Mandelbrot set computation executable"
 	@echo "Add DEBUG=yes to compile in debug"
 	@echo "Configuration :"
