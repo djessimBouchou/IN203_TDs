@@ -66,12 +66,18 @@ int main()
     std::uniform_real_distribution<double> coordDistrib(-10.,10.);
     auto genDouble = std::bind( coordDistrib, generator2 );
 
+
+    /* --------------------------------------------------------*/
     // Trie sur les entiers :
     std::vector<double> tab(N);
     for ( auto& x : tab ) x = genInt();
+
+
     start = std::chrono::system_clock::now();
     Bitonic::sort(true, tab);
     end = std::chrono::system_clock::now();
+
+
     std::chrono::duration<double> elapsed_seconds = end-start;
     std::cout << "Temps calcul tri sur les entiers : " << elapsed_seconds.count() 
               << std::endl;
@@ -81,6 +87,8 @@ int main()
         }
     }
   
+
+    /* --------------------------------------------------------*/
     // Trie sur les vecteurs :
     std::vector<Vecteur> vtab(N);
     for ( auto& x : vtab ) {

@@ -19,7 +19,7 @@ void prodSubBlocks(int iRowBlkA, int iColBlkB, int iColBlkA, int szBlock,
             for (int i = iBl; i < std::min(iBl + szBlock,A.nbCols); ++i)
               C(i, j) += A(i, k) * B(k, j);
 }
-const int szBlock = 512;
+const int szBlock = 32;
 }  // namespace
 
 Matrix operator*(const Matrix& A, const Matrix& B) {
