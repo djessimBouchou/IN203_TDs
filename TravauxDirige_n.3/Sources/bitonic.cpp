@@ -96,6 +96,7 @@ int main()
     elapsed_seconds = end-start;
     std::cout << "Temps calcul tri sur les vecteurs : " << elapsed_seconds.count() 
               << std::endl;
+
     for ( size_t i = 1; i < vtab.size(); ++i ) {
         if ( vtab[i] < vtab[i-1] ) {
             throw std::logic_error("Erreur de tri pour les vecteurs !");

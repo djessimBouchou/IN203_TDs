@@ -14,6 +14,7 @@ void prodSubBlocks(int iRowBlkA, int iColBlkB, int iColBlkA, int szBlock,
   for (int j = iColBlkB; j < std::min(B.nbCols, iColBlkB + szBlock); j++)
     for (int k = iColBlkA; k < std::min(A.nbCols, iColBlkA + szBlock); k++)
       for (int i = iRowBlkA; i < std::min(A.nbRows, iRowBlkA + szBlock); ++i)
+      //#pragma omp atomic
         C(i, j) += A(i, k) * B(k, j);
 }
 const int szBlock = 32;
