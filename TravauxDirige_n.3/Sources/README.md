@@ -89,7 +89,7 @@ On est dans un cas de memory down car on est limité par la vitesse d'accès en 
 
   ordre           | time    | MFlops  | MFlops(n=2048) 
 ------------------|---------|---------|----------------
-i,j,k (origine)   | 3.99163 | 537.996 |     166.41 (très long)        
+i,j,k (origine)   | 3.99163 | 537.996 |166.41 (très long)        
 j,i,k             | 4.12565 | 520.52  |    
 i,k,j             | 24.4884 |  87.694 |    
 k,i,j             | 25.3043 |  84.8662|    
