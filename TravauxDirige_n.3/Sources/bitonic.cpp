@@ -36,18 +36,18 @@ namespace Bitonic
   }
   // --------------------------------------------
   template<typename Obj> std::pair<Obj*,int>
-  _sort( bool up, Obj* objs, int len )
+  _sort( bool up, Obj* objs, int len , int total)
   {
     if (len <= 1) return std::make_pair(objs,1);
-    auto first  = _sort(true , objs, len/2);
-    auto second = _sort(false, objs + len/2, len - (len/2));
+    auto first  = _sort(true , objs, len/2, total);
+    auto second = _sort(false, objs + len/2, len - (len/2), total);
     return _merge(up, first.first, first.second + second.second );
   }
   // --------------------------------------------
   template<typename Obj> std::vector<Obj>&
   sort( bool up, std::vector<Obj>& x )
   {
-    _sort(up, x.data(), int(x.size()));
+    _sort(up, x.data(), int(x.size()), int(x.size()));
     return x;
   }  
 }

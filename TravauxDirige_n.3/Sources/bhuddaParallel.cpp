@@ -98,16 +98,19 @@ bhuddabrot ( unsigned long nbSamples, unsigned long maxIter, unsigned width, uns
     std::cerr << "Computing starting c\n";
     std::vector<unsigned> image(width*height, 0U);
     #pragma omp parallel for
-        for ( unsigned long iSample = 0; iSample < nbSamples; ) {
+        for ( unsigned long iSample = 0; iSample < nbSamples; iSample ++) {
             float r = genNorm();
             float angle = genAngle();
             Complex c{ r * std::cos(angle), r * std::sin(angle) };
             Complex c0{c.re,c.im};
-            if ( test_mandelbrot_divergent( maxIter, c0 ) == true ) {
+            while ( test_mandelbrot_divergent( maxIter, c0 ) == false ) {
+                r = genNorm();
+                angle = genAngle();
+                c =  Complex(r * std::cos(angle), r * std::sin(angle)) ;
+                c0 =Complex(c.re,c.im);
+            }
                 // Calcul de l'orbite si la suite diverge :
                 comp_mandelbrot_orbit( maxIter, c0, width, height, image );
-                iSample ++;
-            }
         }
     return image;
 }
@@ -170,6 +173,7 @@ int main()
     std::cout << "Temps calcul Bhudda 3 : " << elapsed_seconds.count() 
               << std::endl;
     std::cerr << "Preparing the image\n";
+
     std::vector<unsigned char> image(4*width*height);
     start = std::chrono::system_clock::now();
     float b1, b2, b3;

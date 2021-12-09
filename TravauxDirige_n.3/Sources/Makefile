@@ -11,7 +11,7 @@ CXXFLAGS2 = ${CXXFLAGS} -O2 -march=native -Wall
 CXXFLAGS += -O3 -march=native -Wall
 endif
 
-ALL= dotproduct.exe dotproduct_thread.exe TestProductMatrix.exe bhudda.exe bitonic.exe
+ALL= dotproduct.exe dotproduct_thread.exe TestProductMatrix.exe bhuddaParallel.exe bitonic.exe
 
 default:	help
 
@@ -23,7 +23,7 @@ clean:
 %.exe: %.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIB)
 
-TestProductMatrix.exe : TestProductMatrix.cpp Matrix.hpp Matrix.cpp ProdMatMat_Bloc.cpp 
+TestProductMatrix.exe : TestProductMatrix.cpp Matrix.hpp Matrix.cpp ProdMatMat.cpp 
 	$(CXX) $(CXXFLAGS2) $^ -o $@ $(LIB)	
 
 bitonic.exe : bitonic.cpp Vecteur.hpp Vecteur.cpp
