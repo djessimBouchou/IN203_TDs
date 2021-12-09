@@ -56,6 +56,7 @@ Flags:                           fpu vme de pse tsc msr pae mce cx8 apic sep mtr
 
 *Expliquer les paramètres, les fichiers, l'optimisation de compil, NbSamples, ...*
 
+<<<<<<< HEAD
 OMP_NUM    | samples=1024 | assemblage |    dot    |  speedup  |  efficacité
 -----------|--------------|------------|-----------|-----------|--------------
 séquentiel |                                            
@@ -64,6 +65,16 @@ séquentiel |
 3          |                  0.82s        0.14s        2.07
 4          |                  0.75s        0.10s        2.90            
 8          |                  0.88s        0.13s        2.23 
+=======
+OMP_NUM    | samples=1024 | x
+-----------|--------------|----------
+séquentiel |   | 
+1          |   | 
+2          |   | 
+3          |   | 
+4          |   | 
+8          |   | 
+>>>>>>> 3715fe59f2500cfad5749c978e42306c0e8b5228
 
 
 *Discuter sur ce qu'on observe, la logique qui s'y cache.*
