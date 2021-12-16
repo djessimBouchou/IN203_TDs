@@ -1,6 +1,7 @@
 #include <cstdlib>
 #include <random>
 #include <iostream>
+#include <chrono>
 #include <fstream>
 #include "contexte.hpp"
 #include "individu.hpp"
@@ -124,14 +125,19 @@ void simulation(bool affiche)
 
 
     std::cout << "Début boucle épidémie" << std::endl << std::flush;
+
+    std::chrono::time_point < std::chrono::system_clock > start, end;
     while (!quitting)
     {
+        start = std::chrono::system_clock::now();
+
         auto events = queue.pull_events();
         for ( const auto& e : events)
         {
             if (e->kind_of_event() == sdl2::event::quit)
                 quitting = true;
         }
+        
         if (jours_écoulés%365 == 0)// Si le premier Octobre (début de l'année pour l'épidémie ;-) )
         {
             grippe = épidémie::Grippe(jours_écoulés/365);
@@ -184,7 +190,7 @@ void simulation(bool affiche)
         //#############################################################################################################
         //##    Affichage des résultats pour le temps  actuel
         //#############################################################################################################
-        if (affiche) afficheSimulation(écran, grille, jours_écoulés);
+        //if (affiche) afficheSimulation(écran, grille, jours_écoulés);
 
         /*std::cout << jours_écoulés << "\t" << grille.nombreTotalContaminésGrippe() << "\t"
                   << grille.nombreTotalContaminésAgentPathogène() << std::endl;*/
@@ -192,6 +198,9 @@ void simulation(bool affiche)
         output << jours_écoulés << "\t" << grille.nombreTotalContaminésGrippe() << "\t"
                << grille.nombreTotalContaminésAgentPathogène() << std::endl;
         jours_écoulés += 1;
+        end = std::chrono::system_clock::now();
+        std::chrono::duration < double >elapsed_seconds = end - start;
+        std::cout << "Temps écoulé lors du pas de temps " << jours_écoulés << " : " << elapsed_seconds.count() << "\n"; 
     }// Fin boucle temporelle
     output.close();
 }
