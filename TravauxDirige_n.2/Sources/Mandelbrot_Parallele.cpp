@@ -128,7 +128,7 @@ void savePicture( const std::string& filename, int W, int H, const std::vector<i
 int main(int nargs, char *argv[] ) 
  { 
 
-     // On initialise le contexte MPI qui va s'occuper :
+    // On initialise le contexte MPI qui va s'occuper :
 	//    1. Créer un communicateur global, COMM_WORLD qui permet de gérer
 	//       et assurer la cohésion de l'ensemble des processus créés par MPI;
 	//    2. d'attribuer à chaque processus un identifiant ( entier ) unique pour

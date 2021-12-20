@@ -127,9 +127,10 @@ void simulation(bool affiche)
     std::cout << "Début boucle épidémie" << std::endl << std::flush;
 
     std::chrono::time_point < std::chrono::system_clock > start, end;
+    float total = 0;
     while (!quitting)
     {
-        start = std::chrono::system_clock::now();
+        
 
         auto events = queue.pull_events();
         for ( const auto& e : events)
@@ -190,17 +191,25 @@ void simulation(bool affiche)
         //#############################################################################################################
         //##    Affichage des résultats pour le temps  actuel
         //#############################################################################################################
-        //if (affiche) afficheSimulation(écran, grille, jours_écoulés);
-
+        start = std::chrono::system_clock::now();
+        if (affiche) afficheSimulation(écran, grille, jours_écoulés);
+        end = std::chrono::system_clock::now();
         /*std::cout << jours_écoulés << "\t" << grille.nombreTotalContaminésGrippe() << "\t"
                   << grille.nombreTotalContaminésAgentPathogène() << std::endl;*/
 
         output << jours_écoulés << "\t" << grille.nombreTotalContaminésGrippe() << "\t"
                << grille.nombreTotalContaminésAgentPathogène() << std::endl;
         jours_écoulés += 1;
-        end = std::chrono::system_clock::now();
+        
         std::chrono::duration < double >elapsed_seconds = end - start;
+        total += elapsed_seconds.count();
         std::cout << "Temps écoulé lors du pas de temps " << jours_écoulés << " : " << elapsed_seconds.count() << "\n"; 
+        if(jours_écoulés == 200) 
+        {
+            float moyenne = total/200;
+            std::cout << "En moyenne :  " << moyenne << "\n";
+        }
+
     }// Fin boucle temporelle
     output.close();
 }
