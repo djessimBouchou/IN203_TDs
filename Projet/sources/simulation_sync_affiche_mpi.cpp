@@ -2,6 +2,7 @@
 #include <random>
 #include <iostream>
 #include <fstream>
+#include <chrono>
 #include "contexte.hpp"
 #include "individu.hpp"
 #include <mpi.h>
@@ -44,40 +45,7 @@ void màjStatistique( épidémie::Grille& grille, std::vector<épidémie::Indivi
     }
 }
 
-void afficheSimulation(sdl2::window& écran, épidémie::Grille const& grille, std::size_t jour)
-{
-    auto [largeur_écran,hauteur_écran] = écran.dimensions();
-    auto [largeur_grille,hauteur_grille] = grille.dimension();
-    auto const& statistiques = grille.getStatistiques();
-    sdl2::font fonte_texte("./graphisme/src/data/Lato-Thin.ttf", 18);
-    écran.cls({0x00,0x00,0x00});
-    // Affichage de la grille :
-    std::uint16_t stepX = largeur_écran/largeur_grille;
-    unsigned short stepY = (hauteur_écran-50)/hauteur_grille;
-    double factor = 255./15.;
-
-    for ( unsigned short i = 0; i < largeur_grille; ++i )
-    {
-        for (unsigned short j = 0; j < hauteur_grille; ++j )
-        {
-            auto const& stat = statistiques[i+j*largeur_grille];
-            int valueGrippe = stat.nombre_contaminant_grippé_et_contaminé_par_agent+stat.nombre_contaminant_seulement_grippé;
-            int valueAgent  = stat.nombre_contaminant_grippé_et_contaminé_par_agent+stat.nombre_contaminant_seulement_contaminé_par_agent;
-            std::uint16_t origx = i*stepX;
-            std::uint16_t origy = j*stepY;
-            std::uint8_t red = valueGrippe > 0 ? 127+std::uint8_t(std::min(128., 0.5*factor*valueGrippe)) : 0;
-            std::uint8_t green = std::uint8_t(std::min(255., factor*valueAgent));
-            std::uint8_t blue= std::uint8_t(std::min(255., factor*valueAgent ));
-            écran << sdl2::rectangle({origx,origy}, {stepX,stepY}, {red, green,blue}, true);
-        }
-    }
-
-    écran << sdl2::texte("Carte population grippée", fonte_texte, écran, {0xFF,0xFF,0xFF,0xFF}).at(largeur_écran/2, hauteur_écran-20);
-    écran << sdl2::texte(std::string("Jour : ") + std::to_string(jour), fonte_texte, écran, {0xFF,0xFF,0xFF,0xFF}).at(0,hauteur_écran-20);
-    écran << sdl2::flush;
-}
-
-void afficheSimulationEdit(sdl2::window& écran, std::vector<épidémie::Grille::StatistiqueParCase>& stat_grille, std::size_t jour, int largeur_grille, int hauteur_grille)
+void afficheSimulation(sdl2::window& écran, std::vector<épidémie::Grille::StatistiqueParCase>& stat_grille, std::size_t jour, int largeur_grille, int hauteur_grille)
 {
     auto [largeur_écran,hauteur_écran] = écran.dimensions();
     //auto [largeur_grille,hauteur_grille] = grille.dimension();
@@ -112,9 +80,13 @@ void afficheSimulationEdit(sdl2::window& écran, std::vector<épidémie::Grille:
 
 void simulation(bool affiche, MPI_Comm globComm, MPI_Status status, int tag, int rank)
 {
-
+    
     constexpr const unsigned int largeur_écran = 1280, hauteur_écran = 1024;
-    sdl2::window écran("Simulation épidémie de grippe", {largeur_écran,hauteur_écran});
+    sdl2::window* écran;
+    if(rank==0)
+    {
+        écran = new sdl2::window("Simulation épidémie de grippe", {largeur_écran,hauteur_écran});
+    }
 
     unsigned int graine_aléatoire = 1;
     std::uniform_real_distribution<double> porteur_pathogène(0.,1.);
@@ -160,8 +132,11 @@ void simulation(bool affiche, MPI_Comm globComm, MPI_Status status, int tag, int
 
 
     std::cout << "Début boucle épidémie" << std::endl << std::flush;
+    double total = 0;
+    std::chrono::time_point < std::chrono::system_clock > start, end;
     while (!quitting)
     {
+        start = std::chrono::system_clock::now();
         auto events = queue.pull_events();
         for ( const auto& e : events)
         {
@@ -221,7 +196,6 @@ void simulation(bool affiche, MPI_Comm globComm, MPI_Status status, int tag, int
                 personne.seDéplace(grille);
             }
             auto& statistiques = grille.getStatistiques();
-            
             MPI_Send(statistiques.data(), dim_x * dim_y * 3, MPI_INT, 0, tag, globComm);
         }
 
@@ -229,17 +203,24 @@ void simulation(bool affiche, MPI_Comm globComm, MPI_Status status, int tag, int
         //#############################################################################################################
         //##    Affichage des résultats pour le temps  actuel
         //#############################################################################################################
-        if(rank==0)
+        else
         {
             std::vector<épidémie::Grille::StatistiqueParCase> buffer(dim_x * dim_y);
             MPI_Recv(buffer.data(), dim_x * dim_y * 3, MPI_INT, 1, tag, globComm, &status);
 
-            if (affiche) afficheSimulationEdit(écran, buffer, jours_écoulés, dim_x, dim_y);
+            if (affiche) afficheSimulation(*écran, buffer, jours_écoulés, dim_x, dim_y);
         }
 
         /*std::cout << jours_écoulés << "\t" << grille.nombreTotalContaminésGrippe() << "\t"
                   << grille.nombreTotalContaminésAgentPathogène() << std::endl;*/
-
+        end = std::chrono::system_clock::now();
+        if(rank != 0)
+        {
+            std::chrono::duration < double >elapsed_seconds = end - start;
+            total += elapsed_seconds.count();
+            std::cout << "Temps écoulé lors du pas de temps " << jours_écoulés << " : " << elapsed_seconds.count() << "\n"; 
+            if(jours_écoulés == 200) std::cout << "En moyenne : " << total/200 << std::endl;
+        }
         output << jours_écoulés << "\t" << grille.nombreTotalContaminésGrippe() << "\t"
                << grille.nombreTotalContaminésAgentPathogène() << std::endl;
         
