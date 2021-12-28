@@ -81,10 +81,11 @@ void afficheSimulation(sdl2::window& écran, std::vector<épidémie::Grille::Sta
 void simulation(bool affiche, MPI_Comm globComm, MPI_Status status, int tag, int rank, MPI_Request request)
 {
     
-    constexpr const unsigned int largeur_écran = 1280, hauteur_écran = 1024;
+    
     sdl2::window* écran;
     if(rank==0)
     {
+        constexpr const unsigned int largeur_écran = 1280, hauteur_écran = 1024;
         écran = new sdl2::window("Simulation épidémie de grippe", {largeur_écran,hauteur_écran});
     }
 
@@ -121,13 +122,15 @@ void simulation(bool affiche, MPI_Comm globComm, MPI_Status status, int tag, int
     int         nombre_immunisés_grippe= (contexte.taux_population*23)/100;
     sdl2::event_queue queue;
 
-    bool quitting = false;
+  
 
     std::ofstream output;
-    if(rank != 0)
+
+    if(rank == 1)
     {
         output.open("Courbe.dat");
         output << "# jours_écoulés \t nombreTotalContaminésGrippe \t nombreTotalContaminésAgentPathogène()" << std::endl; 
+        std::cout << "Début boucle épidémie" << std::endl << std::flush;
     }
         
 
@@ -136,9 +139,11 @@ void simulation(bool affiche, MPI_Comm globComm, MPI_Status status, int tag, int
     auto [dim_x, dim_y] = grille.dimension();
 
 
-    std::cout << "Début boucle épidémie" << std::endl << std::flush;
+    
     double total = 0;
     std::chrono::time_point < std::chrono::system_clock > start, end;
+
+    bool quitting = false;
 
     while (!quitting)
     {
@@ -204,32 +209,39 @@ void simulation(bool affiche, MPI_Comm globComm, MPI_Status status, int tag, int
             
             auto& statistiques = grille.getStatistiques();
             
+            int flag = 0;
+            MPI_Iprobe(0, tag, globComm, &flag, &status);
+            if(flag)
+            {
+                int buffer;
+                MPI_Irecv(&buffer, 1, MPI_INT, 0, tag, globComm, &request);
+                MPI_Isend(statistiques.data(), dim_x * dim_y * 3, MPI_INT, 0, tag, globComm, &request);
+                MPI_Isend(&jours_écoulés, 1, MPI_INT, 0, tag, globComm, &request);
+            }
             
-            MPI_Isend(statistiques.data(), dim_x * dim_y * 3, MPI_INT, 0, tag, globComm, &request);
         }
 
         
         //#############################################################################################################
         //##    Affichage des résultats pour le temps  actuel
         //#############################################################################################################
-        else
+        else if (rank==0)
         {
-            int flag;
-            MPI_Iprobe(1, tag, globComm, &flag, &status);
-            //std::cout << "Flag est : " << flag << std::endl;
-            if(flag)
-            {
+                int envoie = 1;
+                MPI_Isend(&envoie, 1, MPI_INT, 1, tag, globComm, &request);
+
                 std::vector<épidémie::Grille::StatistiqueParCase> buffer(dim_x * dim_y);
                 MPI_Recv(buffer.data(), dim_x * dim_y * 3, MPI_INT, 1, tag, globComm, &status);
-
+                MPI_Recv(&jours_écoulés, 1, MPI_INT, 1, tag, globComm, &status);
                 if (affiche) afficheSimulation(*écran, buffer, jours_écoulés, dim_x, dim_y);
-            }
+
+                
         }
 
         /*std::cout << jours_écoulés << "\t" << grille.nombreTotalContaminésGrippe() << "\t"
                   << grille.nombreTotalContaminésAgentPathogène() << std::endl;*/
         end = std::chrono::system_clock::now();
-        if(rank != 0)
+        if(rank == 1)
         {
             std::chrono::duration < double >elapsed_seconds = end - start;
             total += elapsed_seconds.count();
@@ -237,11 +249,17 @@ void simulation(bool affiche, MPI_Comm globComm, MPI_Status status, int tag, int
             if(jours_écoulés == 200) std::cout << "En moyenne : " << total/200 << std::endl;
             output << jours_écoulés << "\t" << grille.nombreTotalContaminésGrippe() << "\t"
                << grille.nombreTotalContaminésAgentPathogène() << std::endl;
-        }
-        if(jours_écoulés >= 600) quitting = true;
-        jours_écoulés += 1;
+
+            if(jours_écoulés >= 600)
+            {
+                quitting = true;
+            } 
+            jours_écoulés += 1;
+
+        }        
+        
     }// Fin boucle temporelle
-    if(rank != 0) output.close();
+    if(rank == 1) output.close();
     
 }
 

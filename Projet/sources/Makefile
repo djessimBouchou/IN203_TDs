@@ -48,8 +48,8 @@ graphisme/src/SDL2/formated_texte.o : graphisme/src/SDL2/window.hpp graphisme/sr
 graphisme/src/SDL2/image.o : graphisme/src/SDL2/window.hpp graphisme/src/SDL2/image.hpp graphisme/src/SDL2/image.cpp
 	$(CXX) $(CXXFLAGS) -c graphisme/src/SDL2/image.cpp -o graphisme/src/SDL2/image.o
 
-simulation.exe:	$(OBJS) simulation_async_affiche_mpi.cpp
-	$(CXX) $(CXXFLAGS) $(OBJS) simulation_async_affiche_mpi.cpp -o simulation.exe $(LIBS)
+simulation.exe:	$(OBJS) simulation_async_mpi_omp.cpp
+	$(CXX) $(CXXFLAGS) $(OBJS) simulation_async_mpi_omp.cpp -o simulation.exe $(LIBS)
 
 help:
 	@echo "Available targets : "

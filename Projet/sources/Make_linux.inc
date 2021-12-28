@@ -1,3 +1,3 @@
 CC = mpicc
-CXX = mpic++
+CXX = mpic++ -fopenmp
 LIB =
